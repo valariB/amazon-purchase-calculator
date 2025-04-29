@@ -1,0 +1,37 @@
+<p>Category</p>
+<select id="category">
+  <option selected disabled hidden>Select</option>
+  <option>Paper Towels</option>
+  <option>Toilet Paper</option>
+  <option>Sheets</option>
+  <!-- add more as needed -->
+</select>
+
+<p>Item Price (pre-tax)</p>
+<input type="text" id="price" placeholder="e.g. 15.00">
+
+<p>Discount</p>
+<input type="text" id="discount" placeholder="e.g. 2.50">
+
+<p>Tax Rate (%)</p>
+<input type="text" id="taxRate" placeholder="e.g. 7.5">
+function calculateTip() {
+    let price = parseFloat(document.querySelector('#price').value);
+    let discount = parseFloat(document.querySelector('#discount').value) || 0;
+    let taxRate = parseFloat(document.querySelector('#taxRate').value);
+
+    if (isNaN(price) || isNaN(taxRate)) {
+        alert("Please enter valid values");
+        return;
+    }
+
+    let netPrice = price - discount;
+    let tax = netPrice * (taxRate / 100);
+    let total = netPrice + tax;
+
+    document.querySelector('.tip').style.display = 'block';
+    document.querySelector('#total').innerHTML = 
+        `Net Price: $${netPrice.toFixed(2)}<br>
+         Tax: $${tax.toFixed(2)}<br>
+         Total: $${total.toFixed(2)}`;
+}
