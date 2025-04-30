@@ -7,6 +7,7 @@
       background-color: #f7f9fc;
       margin: 0;
       padding: 20px;
+      font-size: 13px;
     }
 
     .main {
@@ -19,45 +20,48 @@
 
     .container, .summary {
       background-color: #ffffff;
-      border-radius: 10px;
-      padding: 20px;
-      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+      border-radius: 8px;
+      padding: 15px;
+      box-shadow: 0 0 6px rgba(0,0,0,0.08);
       flex: 1;
-      min-width: 360px;
+      min-width: 340px;
     }
 
     h1 {
-      font-size: 20px;
+      font-size: 18px;
       background-color: #004466;
       color: #fff;
       text-align: center;
-      padding: 10px;
-      border-radius: 6px;
+      padding: 8px;
+      border-radius: 5px;
       margin-top: 0;
+      margin-bottom: 20px;
     }
 
     label {
+      font-weight: 600;
+      margin-top: 6px;
       display: block;
-      margin-top: 10px;
     }
 
     input, select {
       width: 100%;
-      padding: 6px;
-      margin-top: 4px;
-      margin-bottom: 10px;
+      padding: 4px 6px;
+      margin-top: 3px;
+      margin-bottom: 8px;
       border-radius: 4px;
       border: 1px solid #ccc;
+      font-size: 13px;
     }
 
     button {
       background-color: #007b9e;
       color: white;
       border: none;
-      padding: 10px;
-      font-size: 14px;
+      padding: 8px;
+      font-size: 13px;
       margin-top: 10px;
-      border-radius: 5px;
+      border-radius: 4px;
       width: 100%;
       cursor: pointer;
     }
@@ -67,17 +71,26 @@
     }
 
     .item-entry {
-      border-bottom: 1px dashed #ccc;
-      padding-bottom: 10px;
-      margin-bottom: 10px;
+      background-color: #f1f4f8;
+      border-left: 3px solid #004466;
+      padding: 10px;
+      margin-bottom: 12px;
+      border-radius: 4px;
+    }
+
+    .item-entry-title {
+      font-weight: bold;
+      margin-bottom: 6px;
+      color: #004466;
     }
 
     .summary h2 {
+      font-size: 15px;
       margin-top: 0;
     }
 
     .summary p {
-      font-size: 14px;
+      font-size: 13px;
       line-height: 1.4;
     }
 
@@ -123,6 +136,7 @@
       const div = document.createElement('div');
       div.className = 'item-entry';
       div.innerHTML = `
+        <div class="item-entry-title">Item ${itemIndex + 1}</div>
         <label>Category</label>
         <select id="category-${itemIndex}">
           <option disabled selected>Select</option>
