@@ -107,3 +107,31 @@
 
         <div class="tip">
             <p>Result</p>
+            <span id="total">0</span>
+        </div>
+    </div>
+
+    <script>
+        document.querySelector('#calculate').onclick = function () {
+            let price = parseFloat(document.querySelector('#price').value);
+            let discount = parseFloat(document.querySelector('#discount').value) || 0;
+            let taxRate = parseFloat(document.querySelector('#taxArea').value);
+
+            if (isNaN(price) || isNaN(taxRate)) {
+                alert("Please enter valid price and select a tax area");
+                return;
+            }
+
+            let netPrice = price - discount;
+            let tax = netPrice * (taxRate / 100);
+            let total = netPrice + tax;
+
+            document.querySelector('.tip').style.display = 'block';
+            document.querySelector('#total').innerHTML =
+                `Net Price: $${netPrice.toFixed(2)}<br>
+                 Tax: $${tax.toFixed(2)}<br>
+                 Total: $${total.toFixed(2)}`;
+        };
+    </script>
+</body>
+</html>
