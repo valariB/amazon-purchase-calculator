@@ -80,6 +80,13 @@
       font-size: 14px;
       line-height: 1.4;
     }
+
+    .totals {
+      border-top: 1px solid #ccc;
+      margin-top: 15px;
+      padding-top: 10px;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
@@ -104,6 +111,7 @@
     <div class="summary" id="summary" style="display:none;">
       <h2>Summary by Category</h2>
       <div id="summary-content"></div>
+      <div class="totals" id="order-totals"></div>
     </div>
   </div>
 
@@ -146,6 +154,10 @@
       }
 
       let results = {};
+      let orderSubtotal = 0;
+      let orderTax = 0;
+      let orderTotal = 0;
+
       for (let i = 0; i < itemIndex; i++) {
         const category = document.getElementById(`category-${i}`).value;
         const qty = parseInt(document.getElementById(`qty-${i}`).value) || 1;
@@ -159,6 +171,10 @@
         const net = (price - discount) * qty;
         const tax = net * (taxRate / 100);
         const total = net + tax;
+
+        orderSubtotal += net;
+        orderTax += tax;
+        orderTotal += total;
 
         if (!results[category]) {
           results[category] = { qty: 0, net: 0, tax: 0, total: 0 };
@@ -182,6 +198,12 @@
           Total: $${results[cat].total.toFixed(2)}</p>
         `;
       }
+
+      document.getElementById('order-totals').innerHTML = `
+        <p>Subtotal: $${orderSubtotal.toFixed(2)}<br>
+        Tax Total: $${orderTax.toFixed(2)}<br>
+        Grand Total: $${orderTotal.toFixed(2)}</p>
+      `;
 
       document.getElementById('summary').style.display = 'block';
     }
