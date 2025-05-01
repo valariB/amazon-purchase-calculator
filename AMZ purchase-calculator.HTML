@@ -186,9 +186,10 @@
           continue;
         }
 
-        const net = (price - discount) * qty;
-        const rawTax = net * (taxRate / 100);
-        const tax = Math.round(rawTax * 100) / 100;
+        const unitNet = price - discount;
+        const unitTax = Math.round((unitNet * taxRate / 100) * 100) / 100;
+        const net = unitNet * qty;
+        const tax = unitTax * qty;
         const total = net + tax;
 
         orderSubtotal += net;
