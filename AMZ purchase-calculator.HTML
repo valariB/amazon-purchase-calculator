@@ -169,7 +169,7 @@
               <option>Linen - Other</option>
               <option>Linen - Kitchen Towels</option>
             </optgroup>
-               <optgroup label="Reactive Supplies">
+            <optgroup label="Reactive Supplies">
               <option>Facilities Management Operating Expense</option>
               <option>Reactive Supplies - Building</option>
               <option>Reactive Supplies - Electrical</option>
@@ -182,6 +182,8 @@
               <option>Reactive Supplies - Other</option>
             </optgroup>
           </select>
+          <label>Item Description (optional)</label>
+          <input type="text" id="description-${itemIndex}" placeholder="e.g., 12-pack of paper towels" />
           <label>Quantity</label>
           <input type="number" id="qty-${itemIndex}" step="1" min="1" value="1" />
           <label>Item Price (pre-tax)</label>
@@ -218,12 +220,16 @@
       let orderTax = 0;
       let orderTotal = 0;
 
+      const summaryDiv = document.getElementById('summary-content');
+      summaryDiv.innerHTML = '';
+
       for (let i = 0; i < itemIndex; i++) {
         const category = document.getElementById(`category-${i}`).value;
         const unitClass = document.getElementById(`class-${i}`).value.trim() || "[Unassigned]";
         const qty = parseInt(document.getElementById(`qty-${i}`).value) || 1;
         const price = parseFloat(document.getElementById(`price-${i}`).value);
         const discount = parseFloat(document.getElementById(`discount-${i}`).value) || 0;
+        const description = document.getElementById(`description-${i}`)?.value.trim() || "";
 
         if (!category || isNaN(price)) continue;
 
@@ -239,25 +245,23 @@
 
         if (!results[unitClass]) results[unitClass] = {};
         if (!results[unitClass][category]) {
-          results[unitClass][category] = { qty: 0, net: 0, tax: 0, total: 0 };
+          results[unitClass][category] = [];
         }
 
-        results[unitClass][category].qty += qty;
-        results[unitClass][category].net += net;
-        results[unitClass][category].tax += tax;
-        results[unitClass][category].total += total;
+        results[unitClass][category].push({
+          qty, net, tax, total, description
+        });
       }
-
-      const summaryDiv = document.getElementById('summary-content');
-      summaryDiv.innerHTML = '';
 
       for (const unit in results) {
         summaryDiv.innerHTML += `<p><strong>Class: ${unit}</strong></p>`;
         for (const cat in results[unit]) {
-          const r = results[unit][cat];
-          summaryDiv.innerHTML += `
-            <p>${cat}<br>
-            Qty: ${r.qty} | Net: $${r.net.toFixed(2)} | Tax: $${r.tax.toFixed(2)} | Total: $${r.total.toFixed(2)}</p>`;
+          results[unit][cat].forEach(r => {
+            summaryDiv.innerHTML += `
+              <p>${cat}<br>
+              ${r.description ? `Description: ${r.description}<br>` : ''}
+              Qty: ${r.qty} | Net: $${r.net.toFixed(2)} | Tax: $${r.tax.toFixed(2)} | Total: $${r.total.toFixed(2)}</p>`;
+          });
         }
       }
 
