@@ -79,9 +79,17 @@
       display: none;
       padding: 10px;
     }
+    summary {
+      cursor: pointer;
+      font-weight: bold;
+      background: #f1f1f1;
+      padding: 8px;
+      border-radius: 4px;
+      margin-top: 20px;
+    }
     .summary h2 {
       font-size: 15px;
-      margin-top: 0;
+      margin-top: 20px;
     }
     .summary p {
       font-size: 13px;
@@ -111,11 +119,18 @@
       <button onclick="resetCalculator()">Reset</button>
     </div>
     <div class="summary" id="summary" style="display:none;">
-      <h2>Summary by Class & Category</h2>
-      <div id="summary-content"></div>
+      <details>
+        <summary>Summary by Class & Category</summary>
+        <div id="summary-content" style="margin-top:10px;"></div>
+      </details>
+
+      <h2>Summary by Item Category</h2>
+      <div id="category-summary"></div>
+
       <div class="totals" id="order-totals"></div>
     </div>
   </div>
+
   <script>
     let itemIndex = 0;
 
@@ -129,69 +144,22 @@
           <label>Category</label>
           <select id="category-${itemIndex}" onchange="updateHeader(${itemIndex})">
             <option disabled selected>Select</option>
-            <optgroup label="GSC - Guest Stay Consumables">
-              <option>GS-Coffee/Coffee Supplies</option>
-              <option>GS-Paper Towels</option>
-              <option>GS-Toiletries-Soap/Shampoo/Lotion</option>
-              <option>GS-Laundry Supplies - Guest Use</option>
-              <option>GS-Trash Can Liners</option>
-              <option>GS-Tissues</option>
-              <option>GS-Kitchen Supplies (dish soap/detergent, sponges)</option>
-              <option>GS-Toilet Paper</option>
-              <option>GS-Water bottles</option>
-              <option>GS-Owner stay Fee</option>
-              <option>GS-Comp stays</option>
-              <option>GS-Spices</option>
-            </optgroup>
-            <optgroup label="US - Unit Supplies">
-              <option>US-Unit Bedroom Supplies</option>
-              <option>US-Unit Bathroom Supplies</option>
-              <option>US-Unit Kitchen Supplies</option>
-              <option>US-Unit Miscellaneous Supplies</option>
-              <option>US-Unit OnBoarding Supplies</option>
-              <option>US-Keurig</option>
-              <option>US-Point Central Locks/Thermostats</option>
-              <option>US-Exterior/Common Area</option>
-              <option>US-Furniture</option>
-            </optgroup>
-            <optgroup label="Linen">
-              <option>Linen - Sheets</option>
-              <option>Linen - Mattress Pads</option>
-              <option>Linen - Pillow Protectors</option>
-              <option>Linen - Shower Curtains</option>
-              <option>Linen - Bath Towels & Washcloths</option>
-              <option>Linen - Blankets</option>
-              <option>Linen - Duvets</option>
-              <option>Linen - Pool Towels</option>
-              <option>Linen - Pillows</option>
-              <option>Linen - 3rd Party Purchased</option>
-              <option>Linen - Bedskirts</option>
-              <option>Linen - Other</option>
-              <option>Linen - Kitchen Towels</option>
-            </optgroup>
-            <optgroup label="Reactive Supplies">
-              <option>Facilities Management Operating Expense</option>
-              <option>Reactive Supplies - Building</option>
-              <option>Reactive Supplies - Electrical</option>
-              <option>Reactive Supplies - Kitchen Equipment</option>
-              <option>Reactive Supplies - Fire & Safety</option>
-              <option>Reactive Supplies - Grounds</option>
-              <option>Reactive Supplies - HVAC</option>
-              <option>Reactive Supplies - Laundry</option>
-              <option>Reactive Supplies - Pool</option>
-              <option>Reactive Supplies - Other</option>
-            </optgroup>
+            <option>GS-Toilet Paper</option>
+            <option>GS-Paper Towels</option>
+            <option>US-Furniture</option>
+            <option>Linen - Towels</option>
+            <option>Reactive Supplies - HVAC</option>
           </select>
           <label>Item Description (optional)</label>
-          <input type="text" id="description-${itemIndex}" placeholder="e.g., 12-pack of paper towels" />
+          <input type="text" id="description-${itemIndex}" />
           <label>Quantity</label>
-          <input type="number" id="qty-${itemIndex}" step="1" min="1" value="1" />
+          <input type="number" id="qty-${itemIndex}" value="1" />
           <label>Item Price (pre-tax)</label>
-          <input type="number" id="price-${itemIndex}" step="0.01" />
+          <input type="number" id="price-${itemIndex}" />
           <label>Discount (per unit)</label>
-          <input type="number" id="discount-${itemIndex}" step="0.01" />
+          <input type="number" id="discount-${itemIndex}" value="0" />
           <label>Class (optional)</label>
-          <input type="text" id="class-${itemIndex}" placeholder="e.g., Gemma 19" />
+          <input type="text" id="class-${itemIndex}" />
         </div>`;
       container.appendChild(div);
       itemIndex++;
@@ -209,54 +177,54 @@
     }
 
     function calculateSummary() {
-      let taxRate = parseFloat(document.getElementById('globalTax').value);
+      const taxRate = parseFloat(document.getElementById('globalTax').value);
       if (isNaN(taxRate)) {
         alert("Please select a Sales Tax Area first.");
         return;
       }
 
-      let results = {};
-      let orderSubtotal = 0;
-      let orderTax = 0;
-      let orderTotal = 0;
-
-      const summaryDiv = document.getElementById('summary-content');
-      summaryDiv.innerHTML = '';
+      const results = {};
+      const categorySummary = {};
+      let orderSubtotal = 0, orderTax = 0, orderTotal = 0;
 
       for (let i = 0; i < itemIndex; i++) {
         const category = document.getElementById(`category-${i}`).value;
-        const unitClass = document.getElementById(`class-${i}`).value.trim() || "[Unassigned]";
-        const qty = parseInt(document.getElementById(`qty-${i}`).value) || 1;
-        const price = parseFloat(document.getElementById(`price-${i}`).value);
+        const itemClass = document.getElementById(`class-${i}`).value.trim();
+        const qty = parseFloat(document.getElementById(`qty-${i}`).value) || 1;
+        const price = parseFloat(document.getElementById(`price-${i}`).value) || 0;
         const discount = parseFloat(document.getElementById(`discount-${i}`).value) || 0;
-        const description = document.getElementById(`description-${i}`)?.value.trim() || "";
+        const description = document.getElementById(`description-${i}`).value;
 
         if (!category || isNaN(price)) continue;
 
-        const unitNet = price - discount;
-        const unitTax = Math.round((unitNet * taxRate / 100) * 100) / 100;
-        const net = unitNet * qty;
-        const tax = unitTax * qty;
+        const net = (price - discount) * qty;
+        const tax = Math.round(((price - discount) * taxRate / 100) * qty * 100) / 100;
         const total = net + tax;
 
         orderSubtotal += net;
         orderTax += tax;
         orderTotal += total;
 
-        if (!results[unitClass]) results[unitClass] = {};
-        if (!results[unitClass][category]) {
-          results[unitClass][category] = [];
-        }
+        // If class exists: group by Class -> Category
+        // If class is empty: group by Category only
+        const groupKey = itemClass ? `Class: ${itemClass}` : `Category Only`;
+        if (!results[groupKey]) results[groupKey] = {};
+        if (!results[groupKey][category]) results[groupKey][category] = [];
+        results[groupKey][category].push({ qty, net, tax, total, description });
 
-        results[unitClass][category].push({
-          qty, net, tax, total, description
-        });
+        if (!categorySummary[category]) categorySummary[category] = { qty: 0, net: 0, tax: 0, total: 0 };
+        categorySummary[category].qty += qty;
+        categorySummary[category].net += net;
+        categorySummary[category].tax += tax;
+        categorySummary[category].total += total;
       }
 
-      for (const unit in results) {
-        summaryDiv.innerHTML += `<p><strong>Class: ${unit}</strong></p>`;
-        for (const cat in results[unit]) {
-          results[unit][cat].forEach(r => {
+      const summaryDiv = document.getElementById('summary-content');
+      summaryDiv.innerHTML = '';
+      for (const group in results) {
+        summaryDiv.innerHTML += `<p><strong>${group}</strong></p>`;
+        for (const cat in results[group]) {
+          results[group][cat].forEach(r => {
             summaryDiv.innerHTML += `
               <p>${cat}<br>
               ${r.description ? `Description: ${r.description}<br>` : ''}
@@ -265,10 +233,22 @@
         }
       }
 
+      const catDiv = document.getElementById('category-summary');
+      catDiv.innerHTML = '';
+      for (const cat in categorySummary) {
+        const r = categorySummary[cat];
+        catDiv.innerHTML += `
+          <p><strong>${cat}</strong><br>
+          Total Qty: ${r.qty} | Net: $${r.net.toFixed(2)} | Tax: $${r.tax.toFixed(2)} | Total: $${r.total.toFixed(2)}</p>`;
+      }
+
       document.getElementById('order-totals').innerHTML = `
-        <p>Subtotal: $${orderSubtotal.toFixed(2)}<br>
-        Tax Total: $${orderTax.toFixed(2)}<br>
-        Grand Total: $${orderTotal.toFixed(2)}</p>`;
+        <p>
+          Subtotal: $${orderSubtotal.toFixed(2)}<br>
+          Tax Total: $${orderTax.toFixed(2)}<br>
+          Grand Total: $${orderTotal.toFixed(2)}
+        </p>`;
+
       document.getElementById('summary').style.display = 'block';
     }
 
