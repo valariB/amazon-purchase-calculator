@@ -123,17 +123,13 @@
         <summary>Summary by Class & Category</summary>
         <div id="summary-content" style="margin-top:10px;"></div>
       </details>
-
       <h2>Summary by Item Category</h2>
       <div id="category-summary"></div>
-
       <div class="totals" id="order-totals"></div>
     </div>
   </div>
-
   <script>
     let itemIndex = 0;
-
     function addItem() {
       const container = document.getElementById('items-container');
       const div = document.createElement('div');
@@ -144,49 +140,92 @@
           <label>Category</label>
           <select id="category-${itemIndex}" onchange="updateHeader(${itemIndex})">
             <option disabled selected>Select</option>
-            <option>GS-Toilet Paper</option>
-            <option>GS-Paper Towels</option>
-            <option>US-Furniture</option>
-            <option>Linen - Towels</option>
-            <option>Reactive Supplies - HVAC</option>
+            <optgroup label="GSC - Guest Stay Consumables">
+              <option>GS-Coffee/Coffee Supplies</option>
+              <option>GS-Paper Towels</option>
+              <option>GS-Toiletries-Soap/Shampoo/Lotion</option>
+              <option>GS-Laundry Supplies - Guest Use</option>
+              <option>GS-Trash Can Liners</option>
+              <option>GS-Tissues</option>
+              <option>GS-Kitchen Supplies (dish soap/detergent, sponges)</option>
+              <option>GS-Toilet Paper</option>
+              <option>GS-Water bottles</option>
+              <option>GS-Owner stay Fee</option>
+              <option>GS-Comp stays</option>
+              <option>GS-Spices</option>
+            </optgroup>
+            <optgroup label="US - Unit Supplies">
+              <option>US-Unit Bedroom Supplies</option>
+              <option>US-Unit Bathroom Supplies</option>
+              <option>US-Unit Kitchen Supplies</option>
+              <option>US-Unit Miscellaneous Supplies</option>
+              <option>US-Unit OnBoarding Supplies</option>
+              <option>US-Keurig</option>
+              <option>US-Point Central Locks/Thermostats</option>
+              <option>US-Exterior/Common Area</option>
+              <option>US-Furniture</option>
+            </optgroup>
+            <optgroup label="Linen">
+              <option>Linen - Sheets</option>
+              <option>Linen - Mattress Pads</option>
+              <option>Linen - Pillow Protectors</option>
+              <option>Linen - Shower Curtains</option>
+              <option>Linen - Bath Towels & Washcloths</option>
+              <option>Linen - Blankets</option>
+              <option>Linen - Duvets</option>
+              <option>Linen - Pool Towels</option>
+              <option>Linen - Pillows</option>
+              <option>Linen - 3rd Party Purchased</option>
+              <option>Linen - Bedskirts</option>
+              <option>Linen - Other</option>
+              <option>Linen - Kitchen Towels</option>
+            </optgroup>
+            <optgroup label="Reactive Supplies">
+              <option>Facilities Management Operating Expense</option>
+              <option>Reactive Supplies - Building</option>
+              <option>Reactive Supplies - Electrical</option>
+              <option>Reactive Supplies - Kitchen Equipment</option>
+              <option>Reactive Supplies - Fire & Safety</option>
+              <option>Reactive Supplies - Grounds</option>
+              <option>Reactive Supplies - HVAC</option>
+              <option>Reactive Supplies - Laundry</option>
+              <option>Reactive Supplies - Plumbing</option>
+              <option>Reactive Supplies - Pool</option>
+              <option>Reactive Supplies - Other</option>
+            </optgroup>
           </select>
           <label>Item Description (optional)</label>
-          <input type="text" id="description-${itemIndex}" />
+          <input type="text" id="description-${itemIndex}" placeholder="e.g., 12-pack of paper towels" />
           <label>Quantity</label>
-          <input type="number" id="qty-${itemIndex}" value="1" />
+          <input type="number" id="qty-${itemIndex}" step="1" min="1" value="1" />
           <label>Item Price (pre-tax)</label>
-          <input type="number" id="price-${itemIndex}" />
+          <input type="number" id="price-${itemIndex}" step="0.01" />
           <label>Discount (per unit)</label>
-          <input type="number" id="discount-${itemIndex}" value="0" />
+          <input type="number" id="discount-${itemIndex}" step="0.01" />
           <label>Class (optional)</label>
-          <input type="text" id="class-${itemIndex}" />
+          <input type="text" id="class-${itemIndex}" placeholder="e.g., Gemma 19" />
         </div>`;
       container.appendChild(div);
       itemIndex++;
     }
-
     function toggleItem(index) {
       const body = document.getElementById(`body-${index}`);
       body.style.display = (body.style.display === "none" || body.style.display === "") ? "block" : "none";
     }
-
     function updateHeader(index) {
       const category = document.getElementById(`category-${index}`).value;
       const header = document.getElementById(`header-${index}`);
       header.innerText = `Item ${index + 1} — ${category}`;
     }
-
     function calculateSummary() {
       const taxRate = parseFloat(document.getElementById('globalTax').value);
       if (isNaN(taxRate)) {
         alert("Please select a Sales Tax Area first.");
         return;
       }
-
       const results = {};
       const categorySummary = {};
       let orderSubtotal = 0, orderTax = 0, orderTotal = 0;
-
       for (let i = 0; i < itemIndex; i++) {
         const category = document.getElementById(`category-${i}`).value;
         const itemClass = document.getElementById(`class-${i}`).value.trim();
@@ -194,31 +233,23 @@
         const price = parseFloat(document.getElementById(`price-${i}`).value) || 0;
         const discount = parseFloat(document.getElementById(`discount-${i}`).value) || 0;
         const description = document.getElementById(`description-${i}`).value;
-
         if (!category || isNaN(price)) continue;
-
         const net = (price - discount) * qty;
         const tax = Math.round(((price - discount) * taxRate / 100) * qty * 100) / 100;
         const total = net + tax;
-
         orderSubtotal += net;
         orderTax += tax;
         orderTotal += total;
-
-        // If class exists: group by Class -> Category
-        // If class is empty: group by Category only
         const groupKey = itemClass ? `Class: ${itemClass}` : `Category Only`;
         if (!results[groupKey]) results[groupKey] = {};
         if (!results[groupKey][category]) results[groupKey][category] = [];
         results[groupKey][category].push({ qty, net, tax, total, description });
-
         if (!categorySummary[category]) categorySummary[category] = { qty: 0, net: 0, tax: 0, total: 0 };
         categorySummary[category].qty += qty;
         categorySummary[category].net += net;
         categorySummary[category].tax += tax;
         categorySummary[category].total += total;
       }
-
       const summaryDiv = document.getElementById('summary-content');
       summaryDiv.innerHTML = '';
       for (const group in results) {
@@ -232,7 +263,6 @@
           });
         }
       }
-
       const catDiv = document.getElementById('category-summary');
       catDiv.innerHTML = '';
       for (const cat in categorySummary) {
@@ -241,24 +271,20 @@
           <p><strong>${cat}</strong><br>
           Total Qty: ${r.qty} | Net: $${r.net.toFixed(2)} | Tax: $${r.tax.toFixed(2)} | Total: $${r.total.toFixed(2)}</p>`;
       }
-
       document.getElementById('order-totals').innerHTML = `
         <p>
           Subtotal: $${orderSubtotal.toFixed(2)}<br>
           Tax Total: $${orderTax.toFixed(2)}<br>
           Grand Total: $${orderTotal.toFixed(2)}
         </p>`;
-
       document.getElementById('summary').style.display = 'block';
     }
-
     function resetCalculator() {
       document.getElementById('items-container').innerHTML = '';
       document.getElementById('summary').style.display = 'none';
       itemIndex = 0;
       addItem();
     }
-
     window.onload = addItem;
   </script>
 </body>
