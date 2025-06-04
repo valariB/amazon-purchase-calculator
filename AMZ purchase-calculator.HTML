@@ -114,6 +114,8 @@
         <option value="7.5">Key West (7.5%)</option>
       </select>
       <div id="items-container"></div>
+      <label>Discount (flat $ amount)</label>
+      <input type="number" id="globalDiscount" step="0.01" value="0" />
       <button onclick="addItem()">+ Add Item</button>
       <button onclick="calculateSummary()">Calculate Summary</button>
       <button onclick="resetCalculator()">Reset</button>
@@ -143,58 +145,11 @@
           <label>Category</label>
           <select id="category-${itemIndex}" onchange="updateHeader(${itemIndex})">
             <option disabled selected>Select</option>
-            <optgroup label="GSC - Guest Stay Consumables">
-              <option>GS-Coffee/Coffee Supplies</option>
-              <option>GS-Paper Towels</option>
-              <option>GS-Toiletries-Soap/Shampoo/Lotion</option>
-              <option>GS-Laundry Supplies - Guest Use</option>
-              <option>GS-Trash Can Liners</option>
-              <option>GS-Tissues</option>
-              <option>GS-Kitchen Supplies (dish soap/detergent, sponges)</option>
-              <option>GS-Toilet Paper</option>
-              <option>GS-Water bottles</option>
-              <option>GS-Owner stay Fee</option>
-              <option>GS-Comp stays</option>
-              <option>GS-Spices</option>
-            </optgroup>
-            <optgroup label="US - Unit Supplies">
-              <option>US-Unit Bedroom Supplies</option>
-              <option>US-Unit Bathroom Supplies</option>
-              <option>US-Unit Kitchen Supplies</option>
-              <option>US-Unit Miscellaneous Supplies</option>
-              <option>US-Unit OnBoarding Supplies</option>
-              <option>US-Keurig</option>
-              <option>US-Point Central Locks/Thermostats</option>
-              <option>US-Exterior/Common Area</option>
-              <option>US-Furniture</option>
-            </optgroup>
-            <optgroup label="Linen">
-              <option>Linen - Sheets</option>
-              <option>Linen - Mattress Pads</option>
-              <option>Linen - Pillow Protectors</option>
-              <option>Linen - Shower Curtains</option>
-              <option>Linen - Bath Towels & Washcloths</option>
-              <option>Linen - Blankets</option>
-              <option>Linen - Duvets</option>
-              <option>Linen - Pool Towels</option>
-              <option>Linen - Pillows</option>
-              <option>Linen - 3rd Party Purchased</option>
-              <option>Linen - Bedskirts</option>
-              <option>Linen - Other</option>
-              <option>Linen - Kitchen Towels</option>
-            </optgroup>
-            <optgroup label="Reactive Supplies">
-              <option>Facilities Management Operating Expense</option>
-              <option>Reactive Supplies - Building</option>
-              <option>Reactive Supplies - Electrical</option>
-              <option>Reactive Supplies - Kitchen Equipment</option>
-              <option>Reactive Supplies - Fire & Safety</option>
-              <option>Reactive Supplies - Grounds</option>
-              <option>Reactive Supplies - HVAC</option>
-              <option>Reactive Supplies - Laundry</option>
-              <option>Reactive Supplies - Pool</option>
-              <option>Reactive Supplies - Other</option>
-            </optgroup>
+            <option>GS-Toilet Paper</option>
+            <option>GS-Coffee/Coffee Supplies</option>
+            <option>US-Unit Kitchen Supplies</option>
+            <option>Reactive Supplies - Electrical</option>
+            <option>Linen - Sheets</option>
           </select>
           <label>Item Description (optional)</label>
           <input type="text" id="description-${itemIndex}" placeholder="e.g., 12-pack of paper towels" />
@@ -202,8 +157,6 @@
           <input type="number" id="qty-${itemIndex}" step="1" min="1" value="1" />
           <label>Item Price (pre-tax)</label>
           <input type="number" id="price-${itemIndex}" step="0.01" />
-          <label>Discount (per unit)</label>
-          <input type="number" id="discount-${itemIndex}" step="0.01" />
           <label>Class (optional)</label>
           <input type="text" id="class-${itemIndex}" placeholder="e.g., Gemma 19" />
         </div>`;
@@ -224,6 +177,7 @@
 
     function calculateSummary() {
       const taxRate = parseFloat(document.getElementById('globalTax').value);
+      const discountFlat = parseFloat(document.getElementById('globalDiscount').value) || 0;
       if (isNaN(taxRate)) {
         alert("Please select a Sales Tax Area first.");
         return;
@@ -243,45 +197,43 @@
         const cls = document.getElementById(`class-${i}`).value.trim();
         const qty = parseInt(document.getElementById(`qty-${i}`).value) || 1;
         const price = parseFloat(document.getElementById(`price-${i}`).value);
-        const discount = parseFloat(document.getElementById(`discount-${i}`).value) || 0;
         const desc = document.getElementById(`description-${i}`).value.trim();
 
         if (!cat || isNaN(price)) continue;
 
-        const net = (price - discount) * qty;
-        const tax = Math.round(((price - discount) * taxRate / 100) * qty * 100) / 100;
-        const lineTotal = net + tax;
-
+        const net = price * qty;
         subtotal += net;
-        totalTax += tax;
-        total += lineTotal;
 
         const key = cls ? `${cls}||${cat}` : cat;
         if (!results[key]) results[key] = [];
-        results[key].push({ qty, net, tax, total: lineTotal, desc });
+        results[key].push({ qty, net, desc });
 
-        if (!categoryTotals[cat]) categoryTotals[cat] = { qty: 0, net: 0, tax: 0, total: 0 };
+        if (!categoryTotals[cat]) categoryTotals[cat] = { qty: 0, net: 0 };
         categoryTotals[cat].qty += qty;
         categoryTotals[cat].net += net;
-        categoryTotals[cat].tax += tax;
-        categoryTotals[cat].total += lineTotal;
       }
+
+      const discountedSubtotal = Math.max(0, subtotal - discountFlat);
+      totalTax = Math.round((discountedSubtotal * taxRate / 100) * 100) / 100;
+      total = discountedSubtotal + totalTax;
 
       for (const key in results) {
         const [cls, cat] = key.includes('||') ? key.split('||') : ["[Unassigned]", key];
         summaryDiv.innerHTML += `<p><strong>Class: ${cls}</strong><br><em>${cat}</em></p>`;
         results[key].forEach(r => {
-          summaryDiv.innerHTML += `<p>${r.desc ? `Description: ${r.desc}<br>` : ''}Qty: ${r.qty} | Net: $${r.net.toFixed(2)} | Tax: $${r.tax.toFixed(2)} | Total: $${r.total.toFixed(2)}</p>`;
+          summaryDiv.innerHTML += `<p>${r.desc ? `Description: ${r.desc}<br>` : ''}Qty: ${r.qty} | Net: $${r.net.toFixed(2)}</p>`;
         });
       }
 
       for (const cat in categoryTotals) {
         const r = categoryTotals[cat];
-        categoryDiv.innerHTML += `<p><strong>${cat}</strong><br>Total Qty: ${r.qty} | Net: $${r.net.toFixed(2)} | Tax: $${r.tax.toFixed(2)} | Total: $${r.total.toFixed(2)}</p>`;
+        categoryDiv.innerHTML += `<p><strong>${cat}</strong><br>Total Qty: ${r.qty} | Net: $${r.net.toFixed(2)}</p>`;
       }
 
       document.getElementById('order-totals').innerHTML = `
         <p>Subtotal: $${subtotal.toFixed(2)}<br>
+        Discount: -$${discountFlat.toFixed(2)}<br>
+        Discounted Subtotal: $${discountedSubtotal.toFixed(2)}<br>
         Tax Total: $${totalTax.toFixed(2)}<br>
         Grand Total: $${total.toFixed(2)}</p>`;
       document.getElementById('summary').style.display = 'block';
@@ -290,6 +242,7 @@
     function resetCalculator() {
       document.getElementById('items-container').innerHTML = '';
       document.getElementById('summary').style.display = 'none';
+      document.getElementById('globalDiscount').value = 0;
       itemIndex = 0;
       addItem();
     }
