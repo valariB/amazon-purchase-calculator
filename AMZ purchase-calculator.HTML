@@ -143,11 +143,59 @@
           <label>Category</label>
           <select id="category-${itemIndex}" onchange="updateHeader(${itemIndex})">
             <option disabled selected>Select</option>
-            <option>GS-Toilet Paper</option>
-            <option>GS-Coffee/Coffee Supplies</option>
-            <option>US-Unit Kitchen Supplies</option>
-            <option>Reactive Supplies - Electrical</option>
-            <option>Linen - Sheets</option>
+            <optgroup label="GSC - Guest Stay Consumables">
+              <option>GS-Coffee/Coffee Supplies</option>
+              <option>GS-Paper Towels</option>
+              <option>GS-Toiletries-Soap/Shampoo/Lotion</option>
+              <option>GS-Laundry Supplies - Guest Use</option>
+              <option>GS-Trash Can Liners</option>
+              <option>GS-Tissues</option>
+              <option>GS-Kitchen Supplies (dish soap/detergent, sponges)</option>
+              <option>GS-Toilet Paper</option>
+              <option>GS-Water bottles</option>
+              <option>GS-Owner stay Fee</option>
+              <option>GS-Comp stays</option>
+              <option>GS-Spices</option>
+            </optgroup>
+            <optgroup label="US - Unit Supplies">
+              <option>US-Unit Bedroom Supplies</option>
+              <option>US-Unit Bathroom Supplies</option>
+              <option>US-Unit Kitchen Supplies</option>
+              <option>US-Unit Miscellaneous Supplies</option>
+              <option>US-Unit OnBoarding Supplies</option>
+              <option>US-Keurig</option>
+              <option>US-Point Central Locks/Thermostats</option>
+              <option>US-Exterior/Common Area</option>
+              <option>US-Furniture</option>
+            </optgroup>
+            <optgroup label="Linen">
+              <option>Linen - Sheets</option>
+              <option>Linen - Mattress Pads</option>
+              <option>Linen - Pillow Protectors</option>
+              <option>Linen - Shower Curtains</option>
+              <option>Linen - Bath Towels & Washcloths</option>
+              <option>Linen - Blankets</option>
+              <option>Linen - Duvets</option>
+              <option>Linen - Pool Towels</option>
+              <option>Linen - Pillows</option>
+              <option>Linen - 3rd Party Purchased</option>
+              <option>Linen - Bedskirts</option>
+              <option>Linen - Other</option>
+              <option>Linen - Kitchen Towels</option>
+            </optgroup>
+            <optgroup label="Reactive Supplies">
+              <option>Facilities Management Operating Expense</option>
+              <option>Reactive Supplies - Building</option>
+              <option>Reactive Supplies - Electrical</option>
+              <option>Reactive Supplies - Kitchen Equipment</option>
+              <option>Reactive Supplies - Fire & Safety</option>
+              <option>Reactive Supplies - Grounds</option>
+              <option>Reactive Supplies - HVAC</option>
+              <option>Reactive Supplies - Laundry</option>
+              <option>Reactive Supplies - Plumbing</option>
+              <option>Reactive Supplies - Pool</option>
+              <option>Reactive Supplies - Other</option>
+            </optgroup>
           </select>
           <label>Item Description (optional)</label>
           <input type="text" id="description-${itemIndex}" placeholder="e.g., 12-pack of paper towels" />
