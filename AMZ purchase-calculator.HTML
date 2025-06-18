@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Amazon Purchase Calculator</title>
+  <title>Purchase Calculator</title>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -11,6 +11,13 @@
       padding: 20px;
       font-size: 13px;
     }
+
+    select optgroup {
+  font-weight: bold;
+  color: #004466;
+  background-color: #e0eaf3;
+  padding: 4px 6px;
+}
     .main {
       display: flex;
       flex-wrap: wrap;
@@ -104,7 +111,7 @@
   </style>
 </head>
 <body>
-  <h1>Amazon Purchase Calculator</h1>
+  <h1>Purchase Calculator</h1>
   <div class="main">
     <div class="container">
       <label>Sales Tax Area</label>
@@ -113,11 +120,17 @@
         <option value="6.5">Tampa (6.5%)</option>
         <option value="7.5">Key West (7.5%)</option>
       </select>
+
+      <label>Shipping (flat amount)</label>
+      <input type="number" id="shipping" step="0.01" placeholder="e.g. 25.00">
+      <button onclick="applyShipping()">Apply Shipping</button>
+
       <div id="items-container"></div>
       <button onclick="addItem()">+ Add Item</button>
       <button onclick="calculateSummary()">Calculate Summary</button>
       <button onclick="resetCalculator()">Reset</button>
     </div>
+
     <div class="summary" id="summary" style="display:none;">
       <details>
         <summary>Purchase Details</summary>
@@ -130,6 +143,7 @@
       <div class="totals" id="order-totals"></div>
     </div>
   </div>
+
   <script>
     let itemIndex = 0;
 
@@ -198,7 +212,7 @@
             </optgroup>
           </select>
           <label>Item Description (optional)</label>
-          <input type="text" id="description-${itemIndex}" placeholder="e.g., 12-pack of paper towels" />
+          <input type="text" id="description-${itemIndex}" />
           <label>Quantity</label>
           <input type="number" id="qty-${itemIndex}" step="1" min="1" value="1" />
           <label>Item Price (pre-tax)</label>
@@ -206,7 +220,7 @@
           <label>Discount (flat $ amount total for all units)</label>
           <input type="number" id="discount-${itemIndex}" step="0.01" value="0" />
           <label>Class (optional)</label>
-          <input type="text" id="class-${itemIndex}" placeholder="e.g., Gemma 19" />
+          <input type="text" id="class-${itemIndex}" />
         </div>`;
       container.appendChild(div);
       itemIndex++;
@@ -223,75 +237,127 @@
       header.innerText = `Item ${index + 1} — ${category}`;
     }
 
-    function calculateSummary() {
-      const taxRate = parseFloat(document.getElementById('globalTax').value);
-      if (isNaN(taxRate)) {
-        alert("Please select a Sales Tax Area first.");
-        return;
-      }
+   function calculateSummary() {
+  const taxRate = parseFloat(document.getElementById('globalTax').value);
+  if (isNaN(taxRate)) {
+    alert("Please select a Sales Tax Area first.");
+    return;
+  }
 
-      const summaryDiv = document.getElementById('summary-content');
-      const categoryDiv = document.getElementById('category-summary');
-      summaryDiv.innerHTML = '';
-      categoryDiv.innerHTML = '';
+  const summaryDiv = document.getElementById('summary-content');
+  const categoryDiv = document.getElementById('category-summary');
+  summaryDiv.innerHTML = '';
+  categoryDiv.innerHTML = '';
+  document.getElementById('order-totals').innerHTML = '';
 
-      let results = {};
-      let categoryTotals = {};
-      let subtotal = 0, totalTax = 0, total = 0;
+  let results = {};
+  let categoryTotals = {};
+  let subtotal = 0, totalTax = 0, total = 0;
 
-      for (let i = 0; i < itemIndex; i++) {
-        const cat = document.getElementById(`category-${i}`).value;
-        const cls = document.getElementById(`class-${i}`).value.trim();
-        const qty = parseInt(document.getElementById(`qty-${i}`).value) || 1;
-        const price = parseFloat(document.getElementById(`price-${i}`).value);
-        const discount = parseFloat(document.getElementById(`discount-${i}`).value) || 0;
-        const desc = document.getElementById(`description-${i}`).value.trim();
+  for (let i = 0; i < itemIndex; i++) {
+    const cat = document.getElementById(`category-${i}`).value;
+    const cls = document.getElementById(`class-${i}`).value.trim();
+    const qty = parseInt(document.getElementById(`qty-${i}`).value) || 1;
+    const price = parseFloat(document.getElementById(`price-${i}`).value);
+    const discount = parseFloat(document.getElementById(`discount-${i}`).value) || 0;
+    const desc = document.getElementById(`description-${i}`).value.trim();
 
-        if (!cat || isNaN(price)) continue;
+    if (!cat || isNaN(price)) continue;
 
-        const totalPrice = price * qty;
-        const net = Math.max(0, totalPrice - discount);
-        const tax = Math.round((net * taxRate / 100) * 100) / 100;
-        const lineTotal = net + tax;
+    const totalPrice = price * qty;
+    const net = Math.max(0, totalPrice - discount);
+    const tax = Math.round((net * taxRate / 100) * 100) / 100;
+    const lineTotal = net + tax;
 
-        subtotal += net;
-        totalTax += tax;
-        total += lineTotal;
+    subtotal += net;
+    totalTax += tax;
+    total += lineTotal;
 
-        const key = cls ? `${cls}||${cat}` : cat;
-        if (!results[key]) results[key] = [];
-        results[key].push({ qty, net, tax, total: lineTotal, desc });
+    const key = cls ? `${cls}||${cat}` : cat;
+    if (!results[key]) results[key] = [];
+    results[key].push({ qty, net, tax, total: lineTotal, desc });
 
-        if (!categoryTotals[cat]) categoryTotals[cat] = { qty: 0, net: 0, tax: 0, total: 0 };
-        categoryTotals[cat].qty += qty;
-        categoryTotals[cat].net += net;
-        categoryTotals[cat].tax += tax;
-        categoryTotals[cat].total += lineTotal;
-      }
+    if (!categoryTotals[cat]) categoryTotals[cat] = { qty: 0, net: 0, tax: 0, total: 0 };
+    categoryTotals[cat].qty += qty;
+    categoryTotals[cat].net += net;
+    categoryTotals[cat].tax += tax;
+    categoryTotals[cat].total += lineTotal;
+  }
 
-      for (const key in results) {
-        const [cls, cat] = key.includes('||') ? key.split('||') : ["[Unassigned]", key];
-        summaryDiv.innerHTML += `<p><strong>Class: ${cls}</strong><br><em>${cat}</em></p>`;
-        results[key].forEach(r => {
-          summaryDiv.innerHTML += `<p>${r.desc ? `Description: ${r.desc}<br>` : ''}Qty: ${r.qty} | Net: $${r.net.toFixed(2)} | Tax: $${r.tax.toFixed(2)} | Total: $${r.total.toFixed(2)}</p>`;
-        });
-      }
+  for (const key in results) {
+    const [cls, cat] = key.includes('||') ? key.split('||') : ["[Unassigned]", key];
+    summaryDiv.innerHTML += `<p><strong>Class: ${cls}</strong><br><em>${cat}</em></p>`;
+    results[key].forEach(r => {
+      summaryDiv.innerHTML += `<p>${r.desc ? `Description: ${r.desc}<br>` : ''}Qty: ${r.qty} | Net: $${r.net.toFixed(2)} | Tax: $${r.tax.toFixed(2)} | Total: $${r.total.toFixed(2)}</p>`;
+    });
+  }
 
-      for (const cat in categoryTotals) {
-        const r = categoryTotals[cat];
-        categoryDiv.innerHTML += `<p><strong>${cat}</strong><br>Total Qty: ${r.qty} | Net: $${r.net.toFixed(2)} | Tax: $${r.tax.toFixed(2)} | Total: $${r.total.toFixed(2)}</p>`;
-      }
+  for (const cat in categoryTotals) {
+    const r = categoryTotals[cat];
+    categoryDiv.innerHTML += `
+      <p><strong>${cat} : QTY ${r.qty}</strong><br>
+      Net: $${r.net.toFixed(2)} | Tax: $${r.tax.toFixed(2)} | <span class="shipping-line"></span>Total: $${r.total.toFixed(2)}</p>`;
+  }
 
-      document.getElementById('order-totals').innerHTML = `
-        <p>Subtotal: $${subtotal.toFixed(2)}<br>
-        Tax Total: $${totalTax.toFixed(2)}<br>
-        Grand Total: $${total.toFixed(2)}</p>`;
-      document.getElementById('summary').style.display = 'block';
+  document.getElementById('order-totals').innerHTML = `
+    <p>Subtotal: $${subtotal.toFixed(2)}<br>
+    Tax Total: $${totalTax.toFixed(2)}</p>`;
+
+  document.getElementById('summary').style.display = 'block';
+}
+
+    function applyShipping() {
+  calculateSummary(); // refresh summary first
+
+  const shippingAmount = parseFloat(document.getElementById('shipping').value) || 0;
+  if (shippingAmount <= 0) return;
+
+  const categoryDiv = document.getElementById('category-summary');
+  const totalsDiv = document.getElementById('order-totals');
+  const summary = document.getElementById('summary');
+
+  const categoryBlocks = Array.from(categoryDiv.querySelectorAll("p"));
+  const categories = categoryBlocks.map(block => {
+    const match = block.innerHTML.match(/<strong>(.*?) : QTY \d+<\/strong>/);
+    return match ? match[1] : null;
+  }).filter(Boolean);
+
+  if (categories.length === 0) return;
+
+  const perCategoryShipping = shippingAmount / categories.length;
+  let grandTotalAddition = 0;
+
+  categoryBlocks.forEach(block => {
+    const totalMatch = block.innerHTML.match(/Total: \$([\d.]+)/);
+    const shippingLine = block.querySelector(".shipping-line");
+
+    if (totalMatch && shippingLine) {
+      const oldTotal = parseFloat(totalMatch[1]);
+      const newTotal = oldTotal + perCategoryShipping;
+      shippingLine.innerHTML = `Shipping: $${perCategoryShipping.toFixed(2)} | `;
+      block.innerHTML = block.innerHTML.replace(/Total: \$[\d.]+/, `Total: $${newTotal.toFixed(2)}`);
+      grandTotalAddition += perCategoryShipping;
     }
+  });
+
+  // Append final total breakdown
+  const totalText = totalsDiv.innerHTML;
+  const match = totalText.match(/Tax Total: \$([\d.]+)/);
+  if (match) {
+    const grand = parseFloat(match[1]) + parseFloat(totalText.match(/Subtotal: \$([\d.]+)/)[1]) + grandTotalAddition;
+    totalsDiv.innerHTML += `
+      <p>Shipping Total: $${shippingAmount.toFixed(2)}<br>
+      <strong>Grand Total: $${grand.toFixed(2)}</strong></p>`;
+  }
+
+  summary.style.display = 'block';
+}
+    
 
     function resetCalculator() {
       document.getElementById('items-container').innerHTML = '';
       document.getElementById('summary').style.display = 'none';
+      document.getElementById('shipping').value = '';
       itemIndex = 0;
       addItem();
     }
