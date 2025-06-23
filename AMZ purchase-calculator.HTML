@@ -121,9 +121,11 @@
         <option value="7.5">Key West (7.5%)</option>
       </select>
 
-      <label>Shipping (flat amount)</label>
-      <input type="number" id="shipping" step="0.01" placeholder="e.g. 25.00">
-      <button onclick="applyShipping()">Apply Shipping</button>
+     <label>Shipping (flat amount)</label>
+<div style="display: flex; gap: 8px;">
+  <input type="number" id="shipping" step="0.01" placeholder="e.g. 25.00" style="flex: 1 0 100px; max-width: 120px;">
+  <button onclick="applyShipping()" style="width: auto; padding: 6px 12px; margin-top: 0;">Apply</button>
+</div>
 
       <div id="items-container"></div>
       <button onclick="addItem()">+ Add Item</button>
@@ -299,9 +301,9 @@
       Net: $${r.net.toFixed(2)} | Tax: $${r.tax.toFixed(2)} | <span class="shipping-line"></span>Total: $${r.total.toFixed(2)}</p>`;
   }
 
-  document.getElementById('order-totals').innerHTML = `
-    <p>Subtotal: $${subtotal.toFixed(2)}<br>
-    Tax Total: $${totalTax.toFixed(2)}</p>`;
+document.getElementById('order-totals').innerHTML = `
+  <p>Tax Total: $${totalTax.toFixed(2)}<br>
+  Subtotal: $${subtotal.toFixed(2)}</p>`;
 
   document.getElementById('summary').style.display = 'block';
 }
