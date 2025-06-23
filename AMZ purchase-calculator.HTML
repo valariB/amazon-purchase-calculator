@@ -318,7 +318,7 @@ let shippingAmount = parseFloat(document.getElementById('shipping').value) || 0;
 let grandTotal = subtotal + totalTax + shippingAmount;
 
 let totalsHTML = `
-  <div style="text-align: right;">
+  <div style="text-align: left;">
     <p>Subtotal: $${subtotal.toFixed(2)}</p>`;
 
 if (shippingAmount > 0) {
