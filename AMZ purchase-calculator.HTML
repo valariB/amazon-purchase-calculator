@@ -114,8 +114,8 @@
   <h1>Purchase Calculator</h1>
   <div class="main">
     <div class="container">
-      <label>Sales Tax Area</label>
-      <select id="globalTax">
+    <label>Sales Tax Area</label>
+<select id="globalTax" style="max-width: 150px; margin-bottom: 12px;">
         <option disabled selected>Select</option>
         <option value="6.5">Tampa (6.5%)</option>
         <option value="7.5">Key West (7.5%)</option>
@@ -127,7 +127,8 @@
   <button onclick="applyShipping()" style="width: auto; padding: 6px 12px; margin-top: 0;">Apply</button>
 </div>
 
-      <div id="items-container"></div>
+     <hr style="margin: 16px 0;">
+<div id="items-container"></div>
       <button onclick="addItem()">+ Add Item</button>
       <button onclick="calculateSummary()">Calculate Summary</button>
       <button onclick="resetCalculator()">Reset</button>
