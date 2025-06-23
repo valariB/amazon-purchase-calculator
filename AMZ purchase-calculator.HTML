@@ -314,9 +314,24 @@ for (const cls in grouped) {
       Net: $${r.net.toFixed(2)} | Tax: $${r.tax.toFixed(2)} | <span class="shipping-line"></span>Total: $${r.total.toFixed(2)}</p>`;
   }
 
-document.getElementById('order-totals').innerHTML = `
-  <p>Tax Total: $${totalTax.toFixed(2)}<br>
-  Subtotal: $${subtotal.toFixed(2)}</p>`;
+let shippingAmount = parseFloat(document.getElementById('shipping').value) || 0;
+let grandTotal = subtotal + totalTax + shippingAmount;
+
+let totalsHTML = `
+  <div style="text-align: right;">
+    <p>Subtotal: $${subtotal.toFixed(2)}</p>`;
+
+if (shippingAmount > 0) {
+  totalsHTML += `<p>Shipping Total: $${shippingAmount.toFixed(2)}</p>`;
+}
+
+totalsHTML += `
+    <p>Tax Total: $${totalTax.toFixed(2)}</p>
+    <hr style="margin: 10px 0;">
+    <p style="font-size: 15px; font-weight: bold;">Grand Total: $${grandTotal.toFixed(2)}</p>
+  </div>`;
+
+document.getElementById('order-totals').innerHTML = totalsHTML;
 
   document.getElementById('summary').style.display = 'block';
 }
