@@ -370,16 +370,7 @@ document.getElementById('order-totals').innerHTML = totalsHTML;
     }
   });
 
-  // Append final total breakdown
-  const totalText = totalsDiv.innerHTML;
-  const match = totalText.match(/Tax Total: \$([\d.]+)/);
-  if (match) {
-    const grand = parseFloat(match[1]) + parseFloat(totalText.match(/Subtotal: \$([\d.]+)/)[1]) + grandTotalAddition;
-    totalsDiv.innerHTML += `
-      <p>Shipping Total: $${shippingAmount.toFixed(2)}<br>
-      <strong>Grand Total: $${grand.toFixed(2)}</strong></p>`;
-  }
-
+ 
   summary.style.display = 'block';
 }
     
