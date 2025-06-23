@@ -286,13 +286,25 @@
     categoryTotals[cat].total += lineTotal;
   }
 
-  for (const key in results) {
-    const [cls, cat] = key.includes('||') ? key.split('||') : ["[Unassigned]", key];
-    summaryDiv.innerHTML += `<p><strong>Class: ${cls}</strong><br><em>${cat}</em></p>`;
-    results[key].forEach(r => {
-      summaryDiv.innerHTML += `<p>${r.desc ? `Description: ${r.desc}<br>` : ''}Qty: ${r.qty} | Net: $${r.net.toFixed(2)} | Tax: $${r.tax.toFixed(2)} | Total: $${r.total.toFixed(2)}</p>`;
+ // Step 1: reorganize results by class then by category
+let grouped = {};
+for (const key in results) {
+  const [cls, cat] = key.includes('||') ? key.split('||') : ["[Unassigned]", key];
+  if (!grouped[cls]) grouped[cls] = {};
+  if (!grouped[cls][cat]) grouped[cls][cat] = [];
+  grouped[cls][cat] = grouped[cls][cat].concat(results[key]);
+}
+
+// Step 2: render grouped summary
+for (const cls in grouped) {
+  summaryDiv.innerHTML += `<p style="margin-top: 10px; font-weight: bold; color: #003344;">Class: ${cls}</p>`;
+  for (const cat in grouped[cls]) {
+    summaryDiv.innerHTML += `<p style="margin-left: 10px;"><em>${cat}</em></p>`;
+    grouped[cls][cat].forEach(r => {
+      summaryDiv.innerHTML += `<p style="margin-left: 20px;">${r.desc ? `Description: ${r.desc}<br>` : ''}Qty: ${r.qty} | Net: $${r.net.toFixed(2)} | Tax: $${r.tax.toFixed(2)} | Total: $${r.total.toFixed(2)}</p>`;
     });
   }
+}
 
   for (const cat in categoryTotals) {
     const r = categoryTotals[cat];
