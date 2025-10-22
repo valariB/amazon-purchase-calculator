@@ -13,11 +13,11 @@
     }
 
     select optgroup {
-  font-weight: bold;
-  color: #004466;
-  background-color: #e0eaf3;
-  padding: 4px 6px;
-}
+      font-weight: bold;
+      color: #004466;
+      background-color: #e0eaf3;
+      padding: 4px 6px;
+    }
     .main {
       display: flex;
       flex-wrap: wrap;
@@ -114,22 +114,29 @@
   <h1>Purchase Calculator</h1>
   <div class="main">
     <div class="container">
-    <label>Sales Tax Area</label>
-<select id="globalTax" style="max-width: 150px; margin-bottom: 12px;">
+      <label>Sales Tax Area</label>
+      <select id="globalTax" style="max-width: 150px; margin-bottom: 12px;">
         <option disabled selected>Select</option>
         <option value="7.5">Tampa (7.5%)</option>
         <option value="7.5">Key West (7.5%)</option>
-<option value="7.0">Tamp (7.0%)</option>
+        <option value="7.0">Tamp (7.0%)</option>
       </select>
 
-     <label>Shipping (flat amount)</label>
-<div style="display: flex; gap: 8px;">
-  <input type="number" id="shipping" step="0.01" placeholder="e.g. 25.00" style="flex: 1 0 100px; max-width: 120px;">
-  <button onclick="applyShipping()" style="width: auto; padding: 6px 12px; margin-top: 0;">Apply</button>
-</div>
+      <label>Shipping (flat amount)</label>
+      <div style="display: flex; gap: 8px;">
+        <input type="number" id="shipping" step="0.01" placeholder="e.g. 25.00" style="flex: 1 0 100px; max-width: 120px;">
+        <button onclick="applyShipping()" style="width: auto; padding: 6px 12px; margin-top: 0;">Apply</button>
+      </div>
 
-     <hr style="margin: 16px 0;">
-<div id="items-container"></div>
+      <!-- NEW: Order-level discount (split evenly across lines) -->
+      <label>Order Discount (total $)</label>
+      <div style="display:flex; gap:8px;">
+        <input type="number" id="orderDiscount" step="0.01" placeholder="e.g. 39.30" style="flex:1 0 100px; max-width: 120px;">
+        <button onclick="calculateSummary()" style="width:auto; padding:6px 12px; margin-top:0;">Apply</button>
+      </div>
+
+      <hr style="margin: 16px 0;">
+      <div id="items-container"></div>
       <button onclick="addItem()">+ Add Item</button>
       <button onclick="calculateSummary()">Calculate Summary</button>
       <button onclick="resetCalculator()">Reset</button>
@@ -241,145 +248,181 @@
       header.innerText = `Item ${index + 1} — ${category}`;
     }
 
-   function calculateSummary() {
-  const taxRate = parseFloat(document.getElementById('globalTax').value);
-  if (isNaN(taxRate)) {
-    alert("Please select a Sales Tax Area first.");
-    return;
-  }
+    // Split a dollar amount into N parts that sum exactly (cents-safe)
+    function splitEvenCents(total, n) {
+      const parts = Array(n).fill(0);
+      if (n <= 0 || !isFinite(total)) return parts;
+      let cents = Math.round(total * 100);
+      const base = Math.floor(cents / n);
+      let remainder = cents - base * n;
+      for (let i = 0; i < n; i++) {
+        parts[i] = (base + (i < remainder ? 1 : 0)) / 100;
+      }
+      return parts;
+    }
 
-  const summaryDiv = document.getElementById('summary-content');
-  const categoryDiv = document.getElementById('category-summary');
-  summaryDiv.innerHTML = '';
-  categoryDiv.innerHTML = '';
-  document.getElementById('order-totals').innerHTML = '';
+    function calculateSummary() {
+      const taxRate = parseFloat(document.getElementById('globalTax').value);
+      if (isNaN(taxRate)) {
+        alert("Please select a Sales Tax Area first.");
+        return;
+      }
 
-  let results = {};
-  let categoryTotals = {};
-  let subtotal = 0, totalTax = 0, total = 0;
+      const orderDiscount = parseFloat(document.getElementById('orderDiscount')?.value) || 0;
 
-  for (let i = 0; i < itemIndex; i++) {
-    const cat = document.getElementById(`category-${i}`).value;
-    const cls = document.getElementById(`class-${i}`).value.trim();
-    const qty = parseInt(document.getElementById(`qty-${i}`).value) || 1;
-    const price = parseFloat(document.getElementById(`price-${i}`).value);
-    const discount = parseFloat(document.getElementById(`discount-${i}`).value) || 0;
-    const desc = document.getElementById(`description-${i}`).value.trim();
+      const summaryDiv = document.getElementById('summary-content');
+      const categoryDiv = document.getElementById('category-summary');
+      summaryDiv.innerHTML = '';
+      categoryDiv.innerHTML = '';
+      document.getElementById('order-totals').innerHTML = '';
 
-    if (!cat || isNaN(price)) continue;
+      let results = {};
+      let categoryTotals = {};
+      let subtotal = 0, totalTax = 0;
 
-    const totalPrice = price * qty;
-    const net = Math.max(0, totalPrice - discount);
-    const tax = Math.round((net * taxRate / 100) * 100) / 100;
-    const lineTotal = net + tax;
+      // 1) Collect valid items first
+      const items = [];
+      for (let i = 0; i < itemIndex; i++) {
+        const cat = document.getElementById(`category-${i}`)?.value;
+        const cls = (document.getElementById(`class-${i}`)?.value || '').trim();
+        const qty = parseInt(document.getElementById(`qty-${i}`)?.value) || 1;
+        const price = parseFloat(document.getElementById(`price-${i}`)?.value);
+        const lineDiscount = parseFloat(document.getElementById(`discount-${i}`)?.value) || 0;
+        const desc = (document.getElementById(`description-${i}`)?.value || '').trim();
 
-    subtotal += net;
-    totalTax += tax;
-    total += lineTotal;
+        if (!cat || isNaN(price)) continue; // skip incomplete lines
+        items.push({ cat, cls, qty, price, lineDiscount, desc });
+      }
 
-    const key = cls ? `${cls}||${cat}` : cat;
-    if (!results[key]) results[key] = [];
-    results[key].push({ qty, net, tax, total: lineTotal, desc });
+      // 2) Split order-level discount evenly across valid items
+      const n = items.length;
+      const splits = splitEvenCents(orderDiscount, n);
 
-    if (!categoryTotals[cat]) categoryTotals[cat] = { qty: 0, net: 0, tax: 0, total: 0 };
-    categoryTotals[cat].qty += qty;
-    categoryTotals[cat].net += net;
-    categoryTotals[cat].tax += tax;
-    categoryTotals[cat].total += lineTotal;
-  }
+      // 3) Process each item with its share of the order discount
+      items.forEach((item, k) => {
+        const { cat, cls, qty, price, lineDiscount, desc } = item;
+        const totalPrice = price * qty;
+        const allocated = splits[k] || 0;                   // even share of order discount
+        const combinedDiscount = (lineDiscount || 0) + allocated;
 
- // Step 1: reorganize results by class then by category
-let grouped = {};
-for (const key in results) {
-  const [cls, cat] = key.includes('||') ? key.split('||') : ["[Unassigned]", key];
-  if (!grouped[cls]) grouped[cls] = {};
-  if (!grouped[cls][cat]) grouped[cls][cat] = [];
-  grouped[cls][cat] = grouped[cls][cat].concat(results[key]);
-}
+        // Discount can't exceed the line total
+        const net = Math.max(0, totalPrice - combinedDiscount);
+        const tax = Math.round((net * taxRate / 100) * 100) / 100;
+        const lineTotal = net + tax;
 
-// Step 2: render grouped summary
-for (const cls in grouped) {
-  summaryDiv.innerHTML += `<p style="margin-top: 10px; font-weight: bold; color: #003344;">Class: ${cls}</p>`;
-  for (const cat in grouped[cls]) {
-    summaryDiv.innerHTML += `<p style="margin-left: 10px;"><em>${cat}</em></p>`;
-    grouped[cls][cat].forEach(r => {
-      summaryDiv.innerHTML += `<p style="margin-left: 20px;">${r.desc ? `Description: ${r.desc}<br>` : ''}Qty: ${r.qty} | Net: $${r.net.toFixed(2)} | Tax: $${r.tax.toFixed(2)} | Total: $${r.total.toFixed(2)}</p>`;
-    });
-  }
-}
+        subtotal += net;
+        totalTax += tax;
 
-  for (const cat in categoryTotals) {
-    const r = categoryTotals[cat];
-    categoryDiv.innerHTML += `
-      <p><strong>${cat} : QTY ${r.qty}</strong><br>
-      Net: $${r.net.toFixed(2)} | Tax: $${r.tax.toFixed(2)} | <span class="shipping-line"></span>Total: $${r.total.toFixed(2)}</p>`;
-  }
+        const key = cls ? `${cls}||${cat}` : cat;
+        if (!results[key]) results[key] = [];
+        results[key].push({
+          qty, net, tax, total: lineTotal, desc,
+          allocatedDiscount: allocated, lineDiscount
+        });
 
-let shippingAmount = parseFloat(document.getElementById('shipping').value) || 0;
-let grandTotal = subtotal + totalTax + shippingAmount;
+        if (!categoryTotals[cat]) categoryTotals[cat] = { qty: 0, net: 0, tax: 0, total: 0 };
+        categoryTotals[cat].qty += qty;
+        categoryTotals[cat].net += net;
+        categoryTotals[cat].tax += tax;
+        categoryTotals[cat].total += lineTotal;
+      });
 
-let totalsHTML = `
-  <div style="text-align: left;">
-    <p>Subtotal: $${subtotal.toFixed(2)}</p>`;
+      // Step 1: reorganize results by class then by category
+      let grouped = {};
+      for (const key in results) {
+        const [cls, cat] = key.includes('||') ? key.split('||') : ["[Unassigned]", key];
+        if (!grouped[cls]) grouped[cls] = {};
+        if (!grouped[cls][cat]) grouped[cls][cat] = [];
+        grouped[cls][cat] = grouped[cls][cat].concat(results[key]);
+      }
 
-if (shippingAmount > 0) {
-  totalsHTML += `<p>Shipping Total: $${shippingAmount.toFixed(2)}</p>`;
-}
+      // Step 2: render grouped summary
+      for (const cls in grouped) {
+        summaryDiv.innerHTML += `<p style="margin-top: 10px; font-weight: bold; color: #003344;">Class: ${cls}</p>`;
+        for (const cat in grouped[cls]) {
+          summaryDiv.innerHTML += `<p style="margin-left: 10px;"><em>${cat}</em></p>`;
+          grouped[cls][cat].forEach(r => {
+            const allocText = r.allocatedDiscount ? ` | Order Disc Alloc: $${r.allocatedDiscount.toFixed(2)}` : '';
+            const perLineText = r.lineDiscount ? ` | Line Disc: $${r.lineDiscount.toFixed(2)}` : '';
+            summaryDiv.innerHTML += `<p style="margin-left: 20px;">${r.desc ? `Description: ${r.desc}<br>` : ''}Qty: ${r.qty} | Net: $${r.net.toFixed(2)} | Tax: $${r.tax.toFixed(2)} | Total: $${r.total.toFixed(2)}${perLineText}${allocText}</p>`;
+          });
+        }
+      }
 
-totalsHTML += `
-    <p>Tax Total: $${totalTax.toFixed(2)}</p>
-    <hr style="margin: 10px 0;">
-    <p style="font-size: 15px; font-weight: bold;">Grand Total: $${grandTotal.toFixed(2)}</p>
-  </div>`;
+      // Category summary
+      for (const cat in categoryTotals) {
+        const r = categoryTotals[cat];
+        document.getElementById('category-summary').innerHTML += `
+          <p><strong>${cat} : QTY ${r.qty}</strong><br>
+          Net: $${r.net.toFixed(2)} | Tax: $${r.tax.toFixed(2)} | <span class="shipping-line"></span>Total: $${r.total.toFixed(2)}</p>`;
+      }
 
-document.getElementById('order-totals').innerHTML = totalsHTML;
+      let shippingAmount = parseFloat(document.getElementById('shipping').value) || 0;
+      let grandTotal = subtotal + totalTax + shippingAmount;
 
-  document.getElementById('summary').style.display = 'block';
-}
+      let totalsHTML = `
+        <div style="text-align: left;">
+          <p>Subtotal: $${subtotal.toFixed(2)}</p>`;
+
+      if (shippingAmount > 0) {
+        totalsHTML += `<p>Shipping Total: $${shippingAmount.toFixed(2)}</p>`;
+      }
+
+      if (orderDiscount > 0) {
+        totalsHTML += `<p>Order Discount (total): -$${orderDiscount.toFixed(2)}</p>`;
+      }
+
+      totalsHTML += `
+          <p>Tax Total: $${totalTax.toFixed(2)}</p>
+          <hr style="margin: 10px 0;">
+          <p style="font-size: 15px; font-weight: bold;">Grand Total: $${grandTotal.toFixed(2)}</p>
+        </div>`;
+
+      document.getElementById('order-totals').innerHTML = totalsHTML;
+      document.getElementById('summary').style.display = 'block';
+    }
 
     function applyShipping() {
-  calculateSummary(); // refresh summary first
+      calculateSummary(); // refresh summary first
 
-  const shippingAmount = parseFloat(document.getElementById('shipping').value) || 0;
-  if (shippingAmount <= 0) return;
+      const shippingAmount = parseFloat(document.getElementById('shipping').value) || 0;
+      if (shippingAmount <= 0) return;
 
-  const categoryDiv = document.getElementById('category-summary');
-  const totalsDiv = document.getElementById('order-totals');
-  const summary = document.getElementById('summary');
+      const categoryDiv = document.getElementById('category-summary');
+      const summary = document.getElementById('summary');
 
-  const categoryBlocks = Array.from(categoryDiv.querySelectorAll("p"));
-  const categories = categoryBlocks.map(block => {
-    const match = block.innerHTML.match(/<strong>(.*?) : QTY \d+<\/strong>/);
-    return match ? match[1] : null;
-  }).filter(Boolean);
+      const categoryBlocks = Array.from(categoryDiv.querySelectorAll("p"));
+      const categories = categoryBlocks.map(block => {
+        const match = block.innerHTML.match(/<strong>(.*?) : QTY \d+<\/strong>/);
+        return match ? match[1] : null;
+      }).filter(Boolean);
 
-  if (categories.length === 0) return;
+      if (categories.length === 0) return;
 
-  const perCategoryShipping = shippingAmount / categories.length;
-  let grandTotalAddition = 0;
+      const perCategoryShipping = shippingAmount / categories.length;
+      let grandTotalAddition = 0;
 
-  categoryBlocks.forEach(block => {
-    const totalMatch = block.innerHTML.match(/Total: \$([\d.]+)/);
-    const shippingLine = block.querySelector(".shipping-line");
+      categoryBlocks.forEach(block => {
+        const totalMatch = block.innerHTML.match(/Total: \$([\d.]+)/);
+        const shippingLine = block.querySelector(".shipping-line");
 
-    if (totalMatch && shippingLine) {
-      const oldTotal = parseFloat(totalMatch[1]);
-      const newTotal = oldTotal + perCategoryShipping;
-      shippingLine.innerHTML = `Shipping: $${perCategoryShipping.toFixed(2)} | `;
-      block.innerHTML = block.innerHTML.replace(/Total: \$[\d.]+/, `Total: $${newTotal.toFixed(2)}`);
-      grandTotalAddition += perCategoryShipping;
+        if (totalMatch && shippingLine) {
+          const oldTotal = parseFloat(totalMatch[1]);
+          const newTotal = oldTotal + perCategoryShipping;
+          shippingLine.innerHTML = `Shipping: $${perCategoryShipping.toFixed(2)} | `;
+          block.innerHTML = block.innerHTML.replace(/Total: \$[\d.]+/, `Total: $${newTotal.toFixed(2)}`);
+          grandTotalAddition += perCategoryShipping;
+        }
+      });
+
+      summary.style.display = 'block';
     }
-  });
-
- 
-  summary.style.display = 'block';
-}
-    
 
     function resetCalculator() {
       document.getElementById('items-container').innerHTML = '';
       document.getElementById('summary').style.display = 'none';
       document.getElementById('shipping').value = '';
+      document.getElementById('orderDiscount').value = '';
       itemIndex = 0;
       addItem();
     }
